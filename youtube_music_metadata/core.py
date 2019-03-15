@@ -3,19 +3,15 @@ from bs4 import BeautifulSoup
 import requests
 from youtube_title_parse import get_artist_title
 import argparse
+import re
+from youtube_music_metadata.addons.spotify import search_sp
+from youtube_music_metadata.addons.musixmatch import search_mm
 
-try:
-    from youtube_music_metadata.addons.spotify import search_sp
-    from youtube_music_metadata.addons.musixmatch import search_mm
-except ModuleNotFoundError:
-    from addons.spotify import search_sp
-    from addons.musixmatch import search_mm
 
-REQUESTS_SESSION = requests.Session()
 
 def get_youtube_metadata(song_link):
     yt_data = {}
-    yt_page = REQUESTS_SESSION.get(song_link).text
+    yt_page = requests.get(song_link).text
     soup = BeautifulSoup(yt_page, 'html.parser')
     yt_title = soup.find('meta', {'property': 'og:title'}).get('content').strip()
     yt_data['title'] = yt_title
@@ -41,7 +37,7 @@ def get_metadata(song_link, spotify=False, musixmatch=False):
         metadata['musixmatch'] = {}
         return metadata
     yt_data = get_youtube_metadata(song_link)
-    clean_title = get_artist_title(yt_data['title'])
+    clean_title = get_artist_title(re.sub('[^A-Za-z0-9 ]+', '', yt_data['title']))
     metadata['youtube'] = yt_data
     if 'artist' not in yt_data:
         if spotify == True:
